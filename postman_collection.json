@@ -1,0 +1,604 @@
+{
+	"info": {
+		"_postman_id": "7849c32b-91f1-4df2-823c-d3d6b0bfbb92",
+		"name": "Healthcare Backend API",
+		"description": "Postman collection for Django REST Framework Healthcare Backend system featuring JWT Authentication, Patient & Doctor CRUD, and Patient-Doctor Mappings.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://127.0.0.1:8000",
+			"type": "string"
+		},
+		{
+			"key": "jwt_access_token",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "1. Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Nurse Jackie\",\n    \"email\": \"nurse.jackie@healthcare.com\",\n    \"password\": \"Jackie@123456\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login User (Captures Token)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.access) {",
+									"    pm.collectionVariables.set('jwt_access_token', jsonData.access);",
+									"    console.log('JWT Access Token saved successfully!');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"doctor.staff@healthcare.com\",\n    \"password\": \"Staff@123456\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refresh\": \"<PASTE_REFRESH_TOKEN_HERE>\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/token/refresh/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"token",
+								"refresh",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. Patients",
+			"item": [
+				{
+					"name": "Add New Patient",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Tony Stark\",\n    \"date_of_birth\": \"1970-05-29\",\n    \"gender\": \"Male\",\n    \"contact_number\": \"+12125550199\",\n    \"email\": \"tony@starkindustries.com\",\n    \"address\": \"10880 Malibu Point, CA\",\n    \"medical_history\": \"Arc reactor shrapnel wound recovery.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/patients/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"patients",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Patients (By Current User)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/patients/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"patients",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Patient by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/patients/1/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"patients",
+								"1",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Patient Details",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Robert Downey Jr.\",\n    \"date_of_birth\": \"1980-04-04\",\n    \"gender\": \"Male\",\n    \"contact_number\": \"+1987654301\",\n    \"email\": \"robert.d@example.com\",\n    \"address\": \"Malibu, California\",\n    \"medical_history\": \"Cardiac follow-up complete. Healthy condition.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/patients/1/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"patients",
+								"1",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Patient Record",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/patients/1/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"patients",
+								"1",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3. Doctors",
+			"item": [
+				{
+					"name": "Add New Doctor",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Leonard McCoy\",\n    \"specialization\": \"Space Medicine & Surgery\",\n    \"contact_number\": \"+1555432100\",\n    \"email\": \"bones.mccoy@starfleet.org\",\n    \"years_of_experience\": 14,\n    \"hospital_affiliation\": \"Starfleet Medical Command\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/doctors/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"doctors",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Doctors",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/doctors/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"doctors",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Doctor by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/doctors/1/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"doctors",
+								"1",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Doctor Details",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Sarah Connor\",\n    \"specialization\": \"Interventional Cardiology\",\n    \"contact_number\": \"+1234567801\",\n    \"email\": \"sarah.connor@hospital.org\",\n    \"years_of_experience\": 13,\n    \"hospital_affiliation\": \"Metropolitan Heart Institute\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/doctors/1/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"doctors",
+								"1",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Doctor Record",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/doctors/1/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"doctors",
+								"1",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "4. Patient-Doctor Mappings",
+			"item": [
+				{
+					"name": "Assign Doctor to Patient",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"patient_id\": 2,\n    \"doctor_id\": 2,\n    \"notes\": \"Infectious disease consultation\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/mappings/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"mappings",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Mappings",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/mappings/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"mappings",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Doctors for Specific Patient",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/mappings/1/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"mappings",
+								"1",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Doctor from Patient",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/mappings/1/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"mappings",
+								"1",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
