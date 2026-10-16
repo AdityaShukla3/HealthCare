@@ -68,7 +68,7 @@ def seed():
 
     doctors = []
     for d in doctors_data:
-        doc, _ = Doctor.objects.get_or_create(email=d["email"], defaults=d)
+        doc, _ = Doctor.objects.get_or_create(email=d["email"], defaults={**d, "created_by": admin_user})
         doctors.append(doc)
     print(f"Created {len(doctors)} doctors.")
 

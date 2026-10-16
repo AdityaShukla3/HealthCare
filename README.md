@@ -32,10 +32,10 @@ A robust, secure backend system for a healthcare application built with **Django
 - **JWT Authentication**: Secure user registration, login, and token refresh using `djangorestframework-simplejwt`.
 - **Custom User Model**: Authenticate with email as username, storing user name and hashed passwords securely.
 - **Patient Management**: Full CRUD operations with user-level isolation (users only access and manage patients they created).
-- **Doctor Management**: Full CRUD operations for registered medical specialists.
-- **Patient-Doctor Mapping**: Assign doctors to patients with duplicate-assignment prevention constraints, query assignments by patient, and unassign doctors.
-- **Production-Ready PostgreSQL**: Backed by a dedicated PostgreSQL container with persistent volume storage.
-- **Automated Test Suite**: 17 unit and integration tests covering authentication, permissions, models, validations, and edge cases.
+- **Doctor Management**: Full CRUD operations for registered medical specialists with creator-restricted update/delete permissions (`IsDoctorCreatorOrReadOnly`).
+- **Patient-Doctor Mapping**: Assign doctors to patients with strict patient ownership isolation, duplicate-assignment prevention constraints, deterministic lookup by patient ID, and unassign capabilities.
+- **Production-Ready PostgreSQL**: Backed by a dedicated PostgreSQL container with persistent volume storage (with optional SQLite support for testing).
+- **Automated Test Suite**: 22 unit and integration tests covering authentication, user ownership isolation, permissions, models, validations, and edge cases.
 - **Interactive Documentation**: Integrated Swagger UI & ReDoc via `drf-spectacular`.
 
 ---
@@ -144,7 +144,15 @@ DB_USER=postgres
 DB_PASSWORD=postgres
 DB_HOST=127.0.0.1
 DB_PORT=5432
+
+# CORS Configuration (Optional, defaults to True for local dev)
+CORS_ALLOW_ALL_ORIGINS=True
 ```
+
+> [!IMPORTANT]
+> - **`SECRET_KEY`**: Required. The application enforces fail-loud behavior (`ImproperlyConfigured`) if `SECRET_KEY` is missing in the environment.
+> - **`DEBUG`**: Defaults safely to `False` if not explicitly defined as `True` in `.env`.
+> - **`CORS_ALLOW_ALL_ORIGINS`**: Set to `True` for development and Postman testing ease. For production deployments, set this to `False` and define explicit whitelist origins via `CORS_ALLOWED_ORIGINS`.
 
 ### Step 5: Run Database Migrations
 Apply migrations to PostgreSQL:
@@ -268,13 +276,18 @@ Once the server is running, visit:
 ### 3. Doctor Management APIs
 *All doctor endpoints require `Authorization: Bearer <access_token>`.*
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `/api/doctors/` | Add a new doctor |
-| `GET` | `/api/doctors/` | Retrieve all doctors |
-| `GET` | `/api/doctors/<id>/` | Get details of a specific doctor |
-| `PUT` | `/api/doctors/<id>/` | Update doctor details |
-| `DELETE`| `/api/doctors/<id>/` | Delete doctor record |
+> [!NOTE]
+> **Access & Ownership Policy**:
+> - Per assignment specifications, `GET /api/doctors/` retrieves all doctors across the hospital so any patient can be assigned to specialists.
+> - To prevent unauthorized modifications in multi-user environments, `PUT` and `DELETE` operations are protected by `IsDoctorCreatorOrReadOnly`: only the user who created the doctor record (or administrators/staff) can update or delete it.
+
+| Method | Endpoint | Description | Permission |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/doctors/` | Add a new doctor (automatically tags `created_by=request.user`) | Authenticated |
+| `GET` | `/api/doctors/` | Retrieve all doctors across the system | Authenticated |
+| `GET` | `/api/doctors/<id>/` | Get details of a specific doctor | Authenticated |
+| `PUT` | `/api/doctors/<id>/` | Update doctor details | Creator or Staff/Admin |
+| `DELETE`| `/api/doctors/<id>/` | Delete doctor record | Creator or Staff/Admin |
 
 #### Create Doctor Example:
 - **POST** `/api/doctors/`
@@ -294,12 +307,19 @@ Once the server is running, visit:
 ### 4. Patient-Doctor Mapping APIs
 *All mapping endpoints require `Authorization: Bearer <access_token>`.*
 
+> [!IMPORTANT]
+> **Ownership Isolation & Deterministic Route Semantics**:
+> - **Patient Ownership Isolation**: Patients are private to each user. The mapping serializer dynamically filters `patient_id` to only patients created by the logged-in user (`patient.created_by == request.user`). Users cannot view, assign doctors to, or delete mappings of patients created by others.
+> - **`GET /api/mappings/`**: Returns all doctor mappings strictly for patients created by the authenticated user.
+> - **`GET /api/mappings/<patient_id>/`**: **Deterministic Lookup**. The URL parameter is strictly interpreted as `patient_id` (not a mapping ID). It returns all doctors assigned to that patient (must belong to the authenticated user). The route `/api/mappings/patient/<patient_id>/` is also supported as an alias. Optional query parameter `?format=doctors` returns pure doctor objects.
+> - **`DELETE /api/mappings/<id>/`**: The URL parameter is strictly the mapping `id`. Verifies that the underlying patient belongs to the authenticated user before deletion.
+
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `POST` | `/api/mappings/` | Assign a doctor to a patient |
-| `GET` | `/api/mappings/` | Retrieve all patient-doctor mappings |
-| `GET` | `/api/mappings/<patient_id>/` | Get all doctors assigned to a specific patient |
-| `DELETE`| `/api/mappings/<id>/` | Remove a doctor from a patient (delete mapping) |
+| `POST` | `/api/mappings/` | Assign a doctor to a patient (User must own the patient) |
+| `GET` | `/api/mappings/` | Retrieve mappings for all patients created by the user |
+| `GET` | `/api/mappings/<patient_id>/` | Get all doctors assigned to a specific patient owned by the user |
+| `DELETE`| `/api/mappings/<id>/` | Remove a doctor from a patient (delete mapping by mapping ID) |
 
 #### Assign Doctor to Patient Example:
 - **POST** `/api/mappings/`
@@ -315,19 +335,24 @@ Once the server is running, visit:
 
 ## 🧪 Testing
 
-Run the full automated test suite (17 tests covering all requirements):
+Run the full automated test suite (22 tests covering authentication, user ownership isolation, permissions, models, validations, and deterministic routing):
 ```bash
 python manage.py test
+```
+
+*(Optional: For testing in local environments without a running PostgreSQL container, set `DB_ENGINE=sqlite3`)*:
+```powershell
+$env:DB_ENGINE="sqlite3"; python manage.py test
 ```
 
 Sample output:
 ```
 Creating test database for alias 'default'...
-Found 17 test(s).
+Found 22 test(s).
 System check identified no issues (0 silenced).
-.................
+......................
 ----------------------------------------------------------------------
-Ran 17 tests in 8.832s
+Ran 22 tests in 18.057s
 
 OK
 Destroying test database for alias 'default'...

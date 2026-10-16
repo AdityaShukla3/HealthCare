@@ -3,6 +3,8 @@ from .models import Doctor
 
 
 class DoctorSerializer(serializers.ModelSerializer):
+    created_by = serializers.ReadOnlyField(source='created_by.email')
+
     class Meta:
         model = Doctor
         fields = (
@@ -13,10 +15,11 @@ class DoctorSerializer(serializers.ModelSerializer):
             'email',
             'years_of_experience',
             'hospital_affiliation',
+            'created_by',
             'created_at',
             'updated_at',
         )
-        read_only_fields = ('id', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'created_by', 'created_at', 'updated_at')
 
     def validate_contact_number(self, value):
         cleaned = value.strip().replace(' ', '').replace('-', '')

@@ -33,16 +33,17 @@ class DoctorAPITests(APITestCase):
         response = self.client.post(self.doctor_list_url, self.doctor_data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['name'], 'Gregory House')
+        self.assertEqual(response.data['created_by'], self.user.email)
 
     def test_get_all_doctors(self):
-        Doctor.objects.create(**self.doctor_data)
+        Doctor.objects.create(created_by=self.user, **self.doctor_data)
         self.client.force_authenticate(user=self.user)
         response = self.client.get(self.doctor_list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
 
-    def test_update_and_delete_doctor(self):
-        doctor = Doctor.objects.create(**self.doctor_data)
+    def test_update_and_delete_doctor_by_creator(self):
+        doctor = Doctor.objects.create(created_by=self.user, **self.doctor_data)
         self.client.force_authenticate(user=self.user)
         detail_url = reverse('doctor-detail', kwargs={'pk': doctor.id})
 
@@ -57,3 +58,28 @@ class DoctorAPITests(APITestCase):
         delete_response = self.client.delete(detail_url)
         self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Doctor.objects.filter(id=doctor.id).exists())
+
+    def test_other_user_cannot_update_or_delete_doctor(self):
+        doctor = Doctor.objects.create(created_by=self.user, **self.doctor_data)
+        other_user = User.objects.create_user(
+            name='Other Staff',
+            email='other@example.com',
+            password='Password123'
+        )
+        self.client.force_authenticate(user=other_user)
+        detail_url = reverse('doctor-detail', kwargs={'pk': doctor.id})
+
+        # Other user can view doctor (GET is allowed across all authenticated users)
+        get_response = self.client.get(detail_url)
+        self.assertEqual(get_response.status_code, status.HTTP_200_OK)
+
+        # Other user cannot update doctor
+        updated_payload = self.doctor_data.copy()
+        updated_payload['name'] = 'Dr. Malicious'
+        put_response = self.client.put(detail_url, updated_payload)
+        self.assertEqual(put_response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Other user cannot delete doctor
+        delete_response = self.client.delete(detail_url)
+        self.assertEqual(delete_response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Doctor.objects.filter(id=doctor.id).exists())

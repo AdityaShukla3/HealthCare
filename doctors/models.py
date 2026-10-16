@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 
 class Doctor(models.Model):
@@ -8,6 +9,13 @@ class Doctor(models.Model):
     email = models.EmailField(unique=True)
     years_of_experience = models.PositiveIntegerField(default=0)
     hospital_affiliation = models.CharField(max_length=255, blank=True, default='')
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='doctors'
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
