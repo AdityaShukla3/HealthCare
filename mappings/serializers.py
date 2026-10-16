@@ -37,9 +37,24 @@ class PatientDoctorMappingSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ('id', 'patient', 'doctor', 'assigned_date', 'created_at', 'updated_at')
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = self.context.get('request')
+        # Restrict patient selection strictly to patients created by the authenticated user
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
+            self.fields['patient_id'].queryset = Patient.objects.filter(created_by=request.user)
+
     def validate(self, attrs):
         patient = attrs.get('patient')
         doctor = attrs.get('doctor')
+
+        # Ownership validation check
+        request = self.context.get('request')
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
+            if patient and patient.created_by != request.user:
+                raise serializers.ValidationError(
+                    {"patient_id": "You can only assign doctors to patients you created."}
+                )
 
         # Check for existing mapping
         if PatientDoctorMapping.objects.filter(patient=patient, doctor=doctor).exists():
