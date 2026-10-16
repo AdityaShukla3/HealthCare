@@ -87,7 +87,7 @@ HealthCare/
 ├── seed_data.py               # Helper script to populate demo data
 ├── postman_collection.json    # Complete Postman Collection export
 ├── requirements.txt           # Project dependencies
-├── .env                       # Environment variables
+├── .env                       # Local environment variables (git-ignored)
 ├── .env.example               # Template environment variables
 └── manage.py
 ```
@@ -133,7 +133,19 @@ pip install -r requirements.txt
 ```
 
 ### Step 4: Configure Environment Variables
-A default `.env` file is provided. You can customize it as needed:
+Create your local `.env` file by copying `.env.example`. Update the values if needed.
+
+**Windows (PowerShell):**
+```powershell
+Copy-Item .env.example .env
+```
+
+**macOS / Linux:**
+```bash
+cp .env.example .env
+```
+
+The template `.env.example` provides ready-to-run development defaults:
 ```ini
 SECRET_KEY=django-insecure-h3althc@re-s3cur3-k3y-2026-drf-jwt-pg
 DEBUG=True
