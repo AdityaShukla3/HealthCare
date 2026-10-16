@@ -31,8 +31,10 @@ def seed():
         email="doctor.staff@healthcare.com",
         defaults={
             "name": "Medical Staff Officer",
+            "is_staff": True
         }
     )
+    demo_user.is_staff = True
     demo_user.set_password("Staff@123456")
     demo_user.save()
 
@@ -68,7 +70,9 @@ def seed():
 
     doctors = []
     for d in doctors_data:
-        doc, _ = Doctor.objects.get_or_create(email=d["email"], defaults={**d, "created_by": admin_user})
+        doc, _ = Doctor.objects.get_or_create(email=d["email"], defaults={**d, "created_by": demo_user})
+        doc.created_by = demo_user
+        doc.save()
         doctors.append(doc)
     print(f"Created {len(doctors)} doctors.")
 

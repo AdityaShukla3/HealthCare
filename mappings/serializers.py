@@ -36,6 +36,7 @@ class PatientDoctorMappingSerializer(serializers.ModelSerializer):
             'updated_at',
         )
         read_only_fields = ('id', 'patient', 'doctor', 'assigned_date', 'created_at', 'updated_at')
+        validators = []  # Disables default UniqueTogetherValidator so custom validate() handles it cleanly
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
